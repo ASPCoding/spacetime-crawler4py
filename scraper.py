@@ -2,6 +2,39 @@ import re
 from urllib.parse import urlparse
 
 def scraper(url, resp):
+    """
+    Given a URL and a Response object from the cache server,
+    return a list of valid outgoing links found on the page.
+    """
+
+    # 1) If the cache server returned an error (600-606) or resp is missing, skip
+    if resp is None:
+        return []
+    if resp.status is None:
+        return []
+    if 600 <= resp.status <= 606:
+        return []
+
+    # 2) Only process successful HTTP responses
+    if resp.status != 200:
+        return []
+
+    # 3) Make sure we actually have a raw_response object (requests.Response-like)
+    if resp.raw_response is None:
+        return []
+
+    # 4) Only parse HTML pages (avoid pdf/images/etc.)
+    content_type = ""
+    try:
+        content_type = resp.raw_response.headers.get("Content-Type", "").lower()
+    except Exception:
+        # If headers are weird/unavailable, safest is to skip
+        return []
+
+    if "text/html" not in content_type:
+        return []
+
+    # 5) Extract links using the provided helper, then filter with is_valid
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 

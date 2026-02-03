@@ -1,12 +1,15 @@
 import re
+from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+
+# RESOURCE:
+# Beautiful Soup: https://medium.com/@spaw.co/beautifulsoup-find-all-421385b341d4 
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
 
-def extract_next_links(url, resp):
-    # Implementation required.
+def extract_next_links(url, resp) -> list:
     # url: the URL that was used to get the page
     # resp.url: the actual url of the page
     # resp.status: the status code returned by the server. 200 is OK, you got the page. Other numbers mean that there was some kind of problem.
@@ -15,7 +18,22 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    return list()
+
+    # Don't extract next links if the content wasn't successfuly returned
+    if resp.status != 200:
+        return []
+    
+    soup = BeautifulSoup(resp.raw_response.content, "html.parser")
+
+    # Finding all a tags where the href links will be located - returns list of strings
+    links = soup.find_all('a', href=True)
+
+    linkstrings = set()
+
+    for link in links:
+        linkstrings.add(link.get('href'))
+
+    return list(linkstrings)
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -46,3 +64,13 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+
+# How many unique pages did you find? 
+    
+# What is the longest page in terms of the number of words? (HTML markup doesn’t count as words)
+    
+# What are the 50 most common words in the entire set of pages crawled under these domains ?
+
+# How many subdomains did you find in the uci.edu domain? Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain. The content of this list should be lines containing subdomain, number, for example:
+# vision.ics.uci.edu, 10

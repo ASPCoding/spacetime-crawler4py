@@ -12,7 +12,7 @@ def scraper(url, resp):
         return []
     if resp.status is None:
         return []
-    if 600 <= resp.status <= 606:
+    if 600 <= resp.status <= 608:
         return []
 
     #only process successful HTTP responses

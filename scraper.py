@@ -28,7 +28,12 @@ def extract_next_links(url, resp) -> list:
     # Finding all a tags where the href links will be located - returns list of strings
     links = soup.find_all('a', href=True)
 
-    return links
+    linkstrings = set()
+
+    for link in links:
+        linkstrings.add(link.get('href'))
+
+    return list(linkstrings)
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 

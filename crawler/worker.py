@@ -18,18 +18,18 @@ class Worker(Thread):
         assert {getsource(scraper).find(req) for req in {"from urllib.request import", "import urllib.request"}} == {-1}, "Do not use urllib.request in scraper.py"
         super().__init__(daemon=True)
 
-    def add_rule(url) -> None:
+    def add_rule(self, url) -> None:
         parsed = urlparse(url)
-        with open("../Rules/" + parsed.hostname + "robots.txt", "w") as file:
-            resp = download(parsed.scheme + "://" + parsed.hostname + "robots.txt", self.config, self.logger)
-            for line in resp:
-                file.write(line)
+        with open("./Rules/" + parsed.hostname + "_robots.txt", "x") as file:
+            resp = download(parsed.scheme + "://" + parsed.hostname + "/robots.txt", self.config, self.logger)
+            for line in resp.raw_response.content.decode("utf-8"):
+                file.write(str(line))
 
-    def follow_rules_of(url, file) -> bool:
+    def follow_rules_of(self, url, file) -> bool:
         disallow = set()
         allow = set()
         for line in file:
-            if line == "User-Agent: *"
+            if line == "User-Agent: *":
                 while True:
                     line = file.readline()
                     if line == "\n":
@@ -47,13 +47,13 @@ class Worker(Thread):
         return True
             
     
-    def is_valid(url) -> bool:
+    def is_valid(self, url) -> bool:
         while True:
             try:
-                with open("../Rules/" + urlparse(url).hostname + "robots.txt") as file:
-                    return follow_rules_of(url, file)
+                with open("./Rules/" + urlparse(url).hostname + "_robots.txt") as file:
+                    return self.follow_rules_of(url, file)
             except FileNotFoundError:
-                add_rule(url)
+                self.add_rule(url)
         
     def run(self):
         while True:
@@ -61,7 +61,7 @@ class Worker(Thread):
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break
-            if not is_valid(tbd_url):
+            if not self.is_valid(tbd_url):
                 self.frontier.mark_url_complete(tbd_url)
                 time.sleep(self.config.time_delay)
                 continue

@@ -106,7 +106,7 @@ def is_valid(url):
             return False
         
         try:
-            with open("./Rules/" + urlparse(url).hostname + "robots.txt") as file:
+            with open("./Rules/" + urlparse(url).hostname + "_robots.txt") as file:
                     if not follow_rules_of(url, file):
                         return False
         except FileNotFoundError:

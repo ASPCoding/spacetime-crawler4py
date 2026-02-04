@@ -52,7 +52,7 @@ def follow_rules_of(url, file) -> bool:
         disallow = set()
         allow = set()
         for line in file:
-            if line == "User-Agent: *":
+            if line.strip() == "User-Agent: *":
                 while True:
                     line = file.readline()
                     if line == "\n":
@@ -64,7 +64,7 @@ def follow_rules_of(url, file) -> bool:
                 break
         parsed = urlparse(url)
         for disallowed in disallow:
-            if disallowed == parsed.path[:disallowed.size()]:
+            if disallowed == parsed.path.startswith(len(disallowed)):
                 if parsed.path not in allow:
                     return False
         return True
@@ -109,7 +109,7 @@ def is_valid(url):
             return False
 
         # low value pages / unwanted (to be added to)
-        unwanted_substring = [ "wp-login.php"]
+        unwanted_substring = [ "wp-login.php", "doku.php"]
         if any(bad in path for bad in unwanted_substring):
             return False
 

@@ -1,6 +1,6 @@
 import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 # RESOURCE:
 # Beautiful Soup: https://medium.com/@spaw.co/beautifulsoup-find-all-421385b341d4 
@@ -124,6 +124,92 @@ def is_valid(url):
 
     except TypeError:
         print ("TypeError for ", parsed)
+        raise
+
+def is_valid(url):
+    try:
+        parsed = urlparse(url)
+
+        if parsed.scheme not in {"http", "https"}:
+            return False
+
+        if not parsed.hostname:
+            return False
+
+        host = parsed.hostname.lower()
+
+        allowed = (".ics.uci.edu", ".cs.uci.edu", ".informatics.uci.edu", ".stat.uci.edu")
+        if not host.endswith(allowed):
+            return False
+
+        try:
+            with open("./Rules/" + host + "_robots.txt") as file:
+                if not follow_rules_of(url, file):
+                    return False
+        except FileNotFoundError:
+            pass
+
+        # -------- CALENDAR FIXING THING --------
+
+        path = (parsed.path or "").lower()
+        query = (parsed.query or "").lower()
+
+        #obvious calendar-ish words in path or query
+        calendar_words = (
+            "calendar", "events", "event", "schedule", "agenda",
+            "seminar", "colloquium", "talks"
+        )
+        calendar_params = (
+            "date", "day", "month", "year", "week", "start", "end",
+            "view", "range", "ical", "outlook-ical"
+        )
+        if any(w in path for w in calendar_words) or any(w + "=" in query for w in calendar_params):
+            #if it looks like calendar navigation skip
+            if any(k + "=" in query for k in calendar_params):
+                return False
+
+        #reject URLs containing dates in path or query
+        if re.search(r"/(19|20)\d{2}([/-])\d{1,2}\2\d{1,2}(/|$)", path):
+            return False
+        if re.search(r"(19|20)\d{2}[-/]\d{1,2}[-/]\d{1,2}", query):
+            return False
+        #to catch the wics calendar url format: .../2021-11 or potentially .../21-11
+        if re.search(r"/\d{2,}(?:[/-]\d{2,})+", path):
+            return False
+
+        #common infinite spaces navigation patterns
+        qs = parse_qs(parsed.query)
+        for key in ("page", "p", "start", "offset"):
+            if key in qs:
+                #if page offset is big or smth it is probs a trap
+                #we can probs change the numbers later if needed
+                try:
+                    val = int(qs[key][0])
+                    if val > 50:
+                        return False
+                except (ValueError, TypeError):
+                    return False
+
+        # long number runs check cuz they could be archives or smth
+        if re.search(r"\d{6,}", path) or re.search(r"\d{6,}", query):
+            return False
+
+        #-----------------------------------------------
+
+        return not re.match(
+            r".*\.(css|js|bmp|gif|jpe?g|ico"
+            r"|png|tiff?|mid|mp2|mp3|mp4"
+            r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
+            r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
+            r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
+            r"|epub|dll|cnf|tgz|sha1"
+            r"|thmx|mso|arff|rtf|jar|csv"
+            r"|rm|smil|wmv|swf|wma|zip|rar|gz)$",
+            path
+        )
+
+    except TypeError:
+        print("TypeError for ", url)
         raise
 
 

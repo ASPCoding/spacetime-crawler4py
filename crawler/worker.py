@@ -22,8 +22,8 @@ class Worker(Thread):
         parsed = urlparse(url)
         with open("./Rules/" + parsed.hostname + "_robots.txt", "x") as file:
             resp = download(parsed.scheme + "://" + parsed.hostname + "/robots.txt", self.config, self.logger)
-            for line in resp.raw_response.content.decode("utf-8"):
-                file.write(str(line))
+            for line in resp.raw_response.content.decode("utf-8").splitlines(True):
+                file.write(line)
 
     def follow_rules_of(self, url, file) -> bool:
         disallow = set()

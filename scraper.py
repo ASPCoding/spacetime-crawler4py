@@ -62,7 +62,10 @@ def follow_rules_of(url, file) -> bool:
                     if line[0] == "A":
                         allow.add(line[7:]) 
                 break
-        parsed = urlparse(url)
+        try:
+            parsed = urlparse(url)
+        except:
+            return False
         for disallowed in disallow:
             if disallowed == parsed.path[:disallowed.size()]:
                 if parsed.path not in allow:
@@ -112,9 +115,14 @@ def is_valid(url):
         unwanted_substring = [ "wp-login.php", "doku.php"]
         if any(bad in path for bad in unwanted_substring):
             return False
+        
+
+        unwanted_queries = ["version=", "action=history", "action=diff"]
+        if any(bad in query for bad in unwanted_queries):
+            return False
 
         return not re.match(
-            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py"
+            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py|java"
             r"|png|tiff?|mid|mp2|mp3|mp4"
             r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"

@@ -161,17 +161,20 @@ def is_valid(url):
         )
         calendar_params = (
             "date", "day", "month", "year", "week", "start", "end",
-            "view", "range"
+            "view", "range", "ical", "outlook-ical"
         )
         if any(w in path for w in calendar_words) or any(w + "=" in query for w in calendar_params):
             #if it looks like calendar navigation skip
-            if any(k + "=" in query for k in ("date", "day", "month", "year", "week", "start", "end", "view", "range")):
+            if any(k + "=" in query for k in calendar_params):
                 return False
 
         #reject URLs containing dates in path or query
         if re.search(r"/(19|20)\d{2}([/-])\d{1,2}\2\d{1,2}(/|$)", path):
             return False
         if re.search(r"(19|20)\d{2}[-/]\d{1,2}[-/]\d{1,2}", query):
+            return False
+        #to catch the wics calendar url format: .../2021-11 or potentially .../21-11
+        if re.search(r"/\d{2,}(?:[/-]\d{2,})+", path):
             return False
 
         #common infinite spaces navigation patterns

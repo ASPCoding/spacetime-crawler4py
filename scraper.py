@@ -68,6 +68,27 @@ def extract_next_links(url, resp) -> list:
 
     return list(linkstrings)
 
+def follow_rules_of(url, file) -> bool:
+        disallow = set()
+        allow = set()
+        for line in file:
+            if line == "User-Agent: *"
+                while True:
+                    line = file.readline()
+                    if line == "\n":
+                        break
+                    if line[0] == "D":
+                        disallow.add(line[10:])
+                    if line[0] == "A":
+                        allow.add(line[7:]) 
+                break
+        parsed = urlparse(url)
+        for disallowed in disallow:
+            if disallowed == parsed.path[:disallowed.size()]:
+                if parsed.path not in allowed:
+                    return False
+        return True
+
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
@@ -78,12 +99,19 @@ def is_valid(url):
             return False
         
         validDomain = False
-        for domain in [".ics.uci.edu/",".cs.uci.edu/",".informatics.uci.edu/",".stat.uci.edu/"]:
+        for domain in [".ics.uci.edu",".cs.uci.edu",".informatics.uci.edu",".stat.uci.edu"]:
             if domain in parsed.hostname:
                 validDomain = True
         if not validDomain:
             return False
         
+        try:
+            with open("./Rules/" + urlparse(url).hostname + "robots.txt") as file:
+                    if not follow_rules_of(url, file):
+                        return False
+            except FileNotFoundError:
+                pass
+
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"

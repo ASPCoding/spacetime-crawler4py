@@ -19,8 +19,9 @@ class Worker(Thread):
         super().__init__(daemon=True)
 
     def add_rule(url) -> None:
-        with open("../Rules/" + urlparse(url).hostname + "robots.txt", "w") as file:
-            resp = download(url, self.config, self.logger)
+        parsed = urlparse(url)
+        with open("../Rules/" + parsed.hostname + "robots.txt", "w") as file:
+            resp = download(parsed.scheme + "://" + parsed.hostname + "robots.txt", self.config, self.logger)
             for line in resp:
                 file.write(line)
 

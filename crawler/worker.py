@@ -42,7 +42,7 @@ class Worker(Thread):
         parsed = urlparse(url)
         for disallowed in disallow:
             if disallowed == parsed.path[:disallowed.size()]:
-                if parsed.path not in allowed:
+                if parsed.path not in allow:
                     return False
         return True
             

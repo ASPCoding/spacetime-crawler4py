@@ -72,7 +72,7 @@ def follow_rules_of(url, file) -> bool:
         disallow = set()
         allow = set()
         for line in file:
-            if line == "User-Agent: *"
+            if line == "User-Agent: *":
                 while True:
                     line = file.readline()
                     if line == "\n":
@@ -85,7 +85,7 @@ def follow_rules_of(url, file) -> bool:
         parsed = urlparse(url)
         for disallowed in disallow:
             if disallowed == parsed.path[:disallowed.size()]:
-                if parsed.path not in allowed:
+                if parsed.path not in allow:
                     return False
         return True
 
@@ -109,8 +109,8 @@ def is_valid(url):
             with open("./Rules/" + urlparse(url).hostname + "robots.txt") as file:
                     if not follow_rules_of(url, file):
                         return False
-            except FileNotFoundError:
-                pass
+        except FileNotFoundError:
+            pass
 
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"

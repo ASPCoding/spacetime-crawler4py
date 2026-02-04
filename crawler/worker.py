@@ -19,7 +19,10 @@ class Worker(Thread):
         super().__init__(daemon=True)
 
     def add_rule(self, url) -> None:
-        parsed = urlparse(url)
+        try:
+            parsed = urlparse(url)
+        except:
+            return
         with open("./Rules/" + parsed.hostname + "_robots.txt", "x") as file:
             resp = download(parsed.scheme + "://" + parsed.hostname + "/robots.txt", self.config, self.logger)
             # if Response object wrapper returns None or not 200, write nothing since there is no content

@@ -44,7 +44,8 @@ def extract_next_links(url, resp) -> list:
         if not href:
             continue
         final_url = remove_fragments(resp.url, link.get('href'))
-        linkstrings.add(final_url)
+        if final_url:
+            linkstrings.add(final_url)
 
     return list(linkstrings)
 
@@ -139,9 +140,14 @@ def is_valid(url):
 
 
 def remove_fragments(url, href):
-    full_url = urljoin(url, href)
-    non_fragment, fragment = urldefrag(full_url)
-    return non_fragment
+    if not url or not href return None
+
+    try:
+        full_url = urljoin(url, href)
+        non_fragment, fragment = urldefrag(full_url)
+        return non_fragment
+    except Exception:
+        return None
 
 def status_check(resp):
     #if the cache server returned an error (600-606) or resp is missing, skip

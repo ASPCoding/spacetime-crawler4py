@@ -52,7 +52,7 @@ def follow_rules_of(url, file) -> bool:
         disallow = set()
         allow = set()
         for line in file:
-            if line.strip() == "User-Agent: *":
+            if line == "User-Agent: *":
                 while True:
                     line = file.readline()
                     if line == "\n":
@@ -64,7 +64,7 @@ def follow_rules_of(url, file) -> bool:
                 break
         parsed = urlparse(url)
         for disallowed in disallow:
-            if disallowed == parsed.path.startswith(len(disallowed)):
+            if disallowed == parsed.path[:disallowed.size()]:
                 if parsed.path not in allow:
                     return False
         return True

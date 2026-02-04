@@ -140,7 +140,8 @@ def is_valid(url):
 
 
 def remove_fragments(url, href):
-    if not url or not href return None
+    if not url or not href:
+        return None
 
     try:
         full_url = urljoin(url, href)

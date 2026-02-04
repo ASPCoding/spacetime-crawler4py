@@ -1,6 +1,6 @@
 import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 # RESOURCE:
 # Beautiful Soup: https://medium.com/@spaw.co/beautifulsoup-find-all-421385b341d4 
@@ -125,9 +125,6 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
-
-import re
-from urllib.parse import urlparse, parse_qs
 
 def is_valid(url):
     try:

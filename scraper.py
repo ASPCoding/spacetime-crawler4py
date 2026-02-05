@@ -50,28 +50,29 @@ def extract_next_links(url, resp) -> list:
     return list(linkstrings)
 
 def follow_rules_of(url, file) -> bool:
-        disallow = set()
-        allow = set()
-        for line in file:
-            if line == "User-Agent: *":
-                while True:
-                    line = file.readline()
-                    if line == "\n":
-                        break
-                    if line[0] == "D":
-                        disallow.add(line[10:])
-                    if line[0] == "A":
-                        allow.add(line[7:]) 
-                break
-        try:
-            parsed = urlparse(url)
-        except:
-            return False
-        for disallowed in disallow:
-            if disallowed == parsed.path[:disallowed.size()]:
-                if parsed.path not in allow:
-                    return False
-        return True
+    disallow = set()
+    allow = set()
+    for line in file:
+        if line == "User-agent: *\n":
+            while True:
+                new_line = file.readline()
+                if new_line == "\n" or new_line == "":
+                    break
+                if new_line[-1] == "\n":
+                    new_line = new_line[:-1]
+                if new_line[0] == "D":
+                    disallow.add(new_line[10:])
+                if new_line[0] == "A":
+                    allow.add(new_line[7:]) 
+            break
+    parsed = urlparse(url)
+    for disallowed in disallow:
+        if len(disallowed) <= len(parsed.path) and disallowed == parsed.path[:len(disallowed)]:
+            if parsed.path in allow:
+                return True
+            else:
+                return False
+    return True
 
 
 def is_valid(url):

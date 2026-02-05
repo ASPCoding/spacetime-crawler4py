@@ -35,20 +35,24 @@ class Worker(Thread):
         disallow = set()
         allow = set()
         for line in file:
-            if line == "User-Agent: *":
+            if line == "User-agent: *\n":
                 while True:
-                    line = file.readline()
-                    if line == "\n":
+                    new_line = file.readline()
+                    if new_line == "\n" or new_line == "":
                         break
-                    if line[0] == "D":
-                        disallow.add(line[10:])
-                    if line[0] == "A":
-                        allow.add(line[7:]) 
+                    if new_line[-1] == "\n":
+                        new_line = new_line[:-1]
+                    if new_line[0] == "D":
+                        disallow.add(new_line[10:])
+                    if new_line[0] == "A":
+                        allow.add(new_line[7:]) 
                 break
         parsed = urlparse(url)
         for disallowed in disallow:
-            if disallowed == parsed.path[:disallowed.size()]:
-                if parsed.path not in allow:
+            if len(disallowed) <= len(parsed.path) and disallowed == parsed.path[:len(disallowed)]:
+                if parsed.path in allow:
+                    return True
+                else:
                     return False
         return True
             

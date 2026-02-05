@@ -49,7 +49,7 @@ class Worker(Thread):
                 break
         parsed = urlparse(url)
         for disallowed in disallow:
-            if disallowed.size() <= parsed.path.size() and disallowed == parsed.path[:disallowed.size()]:
+            if len(disallowed) <= len(parsed.path) and disallowed == parsed.path[:len(disallowed)]:
                 if parsed.path in allow:
                     return True
                 else:

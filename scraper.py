@@ -32,13 +32,18 @@ word_frequencies = dict()
 subdomain_pages = dict()
 
 def write_curr_report() -> None:
-    with open("report.txt","w") as report:
+    global page_count
+    global longest_page_length
+    global longest_page_url
+    global word_frequencies
+    global subdomain_pages
+    with open("./report.txt","w") as report:
         report.write(f"Page Count: {page_count}\n")
         report.write("\n")
         report.write(f"Longest Page: {longest_page_url}, {longest_page_length}\n")
         report.write("\n")
         report.write("Top 50 Words: \n")
-        sortedFrequencies = sorted(word_frequencies.items(), key=lambda item:item[1])
+        sortedFrequencies = sorted(word_frequencies.items(), key=lambda item:item[1], reverse=True)
         i = 0
         for key, value in sortedFrequencies:
             report.write(f"Word: {key}, Frequency: {value}\n")
@@ -47,7 +52,7 @@ def write_curr_report() -> None:
                 break
         report.write("\n")
         report.write("Subdomain Pages:\n")
-        for key, value in sortedFrequencies:
+        for key, value in subdomain_pages.items():
             report.write(f"Domain: {key}, Pages: {value}\n")
 
 
@@ -73,18 +78,23 @@ def response_analysis(url, resp) -> bool:
     if important_words < 200:
         return False
     else:
+        global page_count
+        global longest_page_length
+        global longest_page_url
+        global word_frequencies
+        global subdomain_pages
         page_count += 1
         if len(words) > longest_page_length:
             longest_page_length = len(words)
             longest_page_url = url
         for word in page_dict:
-            if word not in word_frequencies:
-                word_frequencies[word] = 0
+            if word not in word_frequencies.keys():
+                word_frequencies[word] = 1
             else:
                 word_frequencies[word] += page_dict[word]
         try:
-            if urlparse(url).hostname not in subdomain_pages:
-                subdomain_pages[urlparse(url).hostname] = 0
+            if urlparse(url).hostname not in subdomain_pages.keys():
+                subdomain_pages[urlparse(url).hostname] = 1
             else:
                 subdomain_pages[urlparse(url).hostname] += 1
         except TypeError:
@@ -105,7 +115,7 @@ def scraper(url, resp):
         return []
 
     #extract links using the provided helper, then filter with is_valid
-    high_info = response_analysis(resp)
+    high_info = response_analysis(url, resp)
     if high_info:
         links = extract_next_links(url, resp)
         return [link for link in links if is_valid(link)]

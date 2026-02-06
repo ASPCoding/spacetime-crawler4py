@@ -122,8 +122,9 @@ def is_valid(url):
         if any(bad in path for bad in unwanted_substring):
             return False
 
+        # added: c, m, ma, js, java, txt, odc, py
         return not re.match(
-            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py"
+            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py|java|txt|odc"
             r"|png|tiff?|mid|mp2|mp3|mp4"
             r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"

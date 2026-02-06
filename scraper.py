@@ -31,6 +31,38 @@ word_frequencies = dict()
 # The content of this list should be lines containing subdomain, number, for example:
 subdomain_pages = dict()
 
+def attempt_recovery():
+    global page_count
+    global longest_page_length
+    global longest_page_url
+    global word_frequencies
+    global subdomain_pages
+    try:
+        with open("./report.txt") as report:
+            line = report.readline().strip()
+            if line == "":
+                return
+            if line[0] != "P":
+                return
+            else:
+                page_count = int(line.split()[2])
+            line = report.readline()
+            line = report.readline().strip().split()
+            longest_page_length = int(line[3])
+            longest_page_url = line[2][:-1]
+        
+        with open("./word_frequencies.txt") as file:
+            for line in file:
+                pair = line.strip().split()
+                word_frequencies[pair[0]] = pair[1]
+            
+        with open("./subdomain_pages.txt") as file:
+            for line in file:
+                pair = line.strip().split()
+                subdomain_pages[pair[0]] = pair[1]
+    except FileNotFoundError:
+        pass
+
 def write_curr_report() -> None:
     global page_count
     global longest_page_length
@@ -55,6 +87,19 @@ def write_curr_report() -> None:
         for key, value in subdomain_pages.items():
             report.write(f"Domain: {key}, Pages: {value}\n")
 
+def backup_dictionaries() -> None:
+    global word_frequencies
+    global subdomain_pages
+    try:
+        with open("./word_frequencies.txt","w") as file:
+            for key, value in word_frequencies.items():
+                file.write(f"{key} {value}\n")
+            
+        with open("./subdomain_pages.txt","w") as file:
+            for key, value in subdomain_pages.items():
+                file.write(f"{key} {value}\n")
+    except FileNotFoundError:
+        pass
 
 
 def response_analysis(url, resp) -> bool:
@@ -102,6 +147,7 @@ def response_analysis(url, resp) -> bool:
             raise
 
     write_curr_report()
+    backup_dictionaries()
 
     return True
 
@@ -114,6 +160,8 @@ def scraper(url, resp):
     if not status_check(resp):
         return []
 
+    if page_count == 0:
+        attempt_recovery()
     #extract links using the provided helper, then filter with is_valid
     high_info = response_analysis(url, resp)
     if high_info:

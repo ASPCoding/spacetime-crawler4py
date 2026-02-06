@@ -351,6 +351,11 @@ def is_valid(url):
         unwanted_substring = [ "wp-login.php", "doku.php"]
         if any(bad in path for bad in unwanted_substring):
             return False
+        
+
+        unwanted_queries = ["version=", "action=history", "action=diff"]
+        if any(bad in query for bad in unwanted_queries):
+            return False
 
         # added: c, m, ma, js, java, txt, odc, py
         return not re.match(

@@ -44,6 +44,8 @@ def extract_next_links(url, resp) -> list:
         if not href:
             continue
         final_url = remove_fragments(resp.url, link.get('href'))
+        if not final_url:
+            continue
         linkstrings.add(final_url)
 
     return list(linkstrings)
@@ -108,6 +110,9 @@ def is_valid(url):
         if not infinite_space_trap (parsed):
             return False
 
+        if share_trap(parsed.query):
+            return False
+
         # long number runs check cuz they could be archives or smth
         if re.search(r"\d{6,}", path) or re.search(r"\d{6,}", query):
             return False
@@ -135,9 +140,12 @@ def is_valid(url):
 
 
 def remove_fragments(url, href):
-    full_url = urljoin(url, href)
-    non_fragment, fragment = urldefrag(full_url)
-    return non_fragment
+    try: 
+        full_url = urljoin(url, href)
+        non_fragment, fragment = urldefrag(full_url)
+        return non_fragment
+    except:
+        return None
 
 def status_check(resp):
     #if the cache server returned an error (600-606) or resp is missing, skip
@@ -170,9 +178,14 @@ def status_check(resp):
 
 def calendar_trap (path, query):
 
+    # WICS calendar
+    if "post_type=tribe_events" in query:
+        return False
+
+
     #obvious calendar-ish words in path or query
     calendar_words = (
-        "calendar", "events", "event", "schedule", "agenda",
+        "paged", "eventDisplay", "eventdisplay", "calendar", "events", "event", "schedule", "agenda",
         "seminar", "colloquium", "talks"
     )
     calendar_params = (
@@ -208,6 +221,10 @@ def infinite_space_trap(parsed):
             except (ValueError, TypeError):
                 return False
     return True
+
+def share_trap(query: str) -> bool:
+    #wics website has share=facebook share=twitter that get duplicated
+    return query.lower().startswith("share=")
 
 # How many unique pages did you find? 
     

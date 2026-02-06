@@ -138,6 +138,8 @@ def extract_next_links(url, resp) -> list:
         if not href:
             continue
         final_url = remove_fragments(resp.url, link.get('href'))
+        if not final_url:
+            continue
         linkstrings.add(final_url)
 
     return list(linkstrings)
@@ -214,8 +216,9 @@ def is_valid(url):
         if any(bad in path for bad in unwanted_substring):
             return False
 
+        # added: c, m, ma, js, java, txt, odc, py
         return not re.match(
-            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py"
+            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py|java|txt|odc"
             r"|png|tiff?|mid|mp2|mp3|mp4"
             r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
@@ -232,9 +235,12 @@ def is_valid(url):
 
 
 def remove_fragments(url, href):
-    full_url = urljoin(url, href)
-    non_fragment, fragment = urldefrag(full_url)
-    return non_fragment
+    try: 
+        full_url = urljoin(url, href)
+        non_fragment, fragment = urldefrag(full_url)
+        return non_fragment
+    except:
+        return None
 
 def status_check(resp):
     #if the cache server returned an error (600-606) or resp is missing, skip
@@ -274,7 +280,7 @@ def calendar_trap (path, query):
 
     #obvious calendar-ish words in path or query
     calendar_words = (
-        "paged", "eventdisplay", "calendar", "events", "event", "schedule", "agenda",
+        "paged", "eventDisplay", "eventdisplay", "calendar", "events", "event", "schedule", "agenda",
         "seminar", "colloquium", "talks"
     )
     calendar_params = (

@@ -44,8 +44,9 @@ def extract_next_links(url, resp) -> list:
         if not href:
             continue
         final_url = remove_fragments(resp.url, link.get('href'))
-        if final_url:
-            linkstrings.add(final_url)
+        if not final_url:
+            continue
+        linkstrings.add(final_url)
 
     return list(linkstrings)
 
@@ -109,6 +110,9 @@ def is_valid(url):
         if not infinite_space_trap (parsed):
             return False
 
+        if share_trap(parsed.query):
+            return False
+
         # long number runs check cuz they could be archives or smth
         if re.search(r"\d{6,}", path) or re.search(r"\d{6,}", query):
             return False
@@ -123,8 +127,9 @@ def is_valid(url):
         if any(bad in query for bad in unwanted_queries):
             return False
 
+        # added: c, m, ma, js, java, txt, odc, py
         return not re.match(
-            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py|java"
+            r".*\.(css|c|m|ma|js|bmp|gif|jpe?g|ico|py|java|txt|odc"
             r"|png|tiff?|mid|mp2|mp3|mp4"
             r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
@@ -141,14 +146,11 @@ def is_valid(url):
 
 
 def remove_fragments(url, href):
-    if not url or not href:
-        return None
-
-    try:
+    try: 
         full_url = urljoin(url, href)
         non_fragment, fragment = urldefrag(full_url)
         return non_fragment
-    except Exception:
+    except:
         return None
 
 def status_check(resp):
@@ -182,9 +184,14 @@ def status_check(resp):
 
 def calendar_trap (path, query):
 
+    # WICS calendar
+    if "post_type=tribe_events" in query:
+        return False
+
+
     #obvious calendar-ish words in path or query
     calendar_words = (
-        "calendar", "events", "event", "schedule", "agenda",
+        "paged", "eventDisplay", "eventdisplay", "calendar", "events", "event", "schedule", "agenda",
         "seminar", "colloquium", "talks"
     )
     calendar_params = (
@@ -220,6 +227,10 @@ def infinite_space_trap(parsed):
             except (ValueError, TypeError):
                 return False
     return True
+
+def share_trap(query: str) -> bool:
+    #wics website has share=facebook share=twitter that get duplicated
+    return query.lower().startswith("share=")
 
 # How many unique pages did you find? 
     

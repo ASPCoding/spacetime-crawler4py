@@ -227,27 +227,22 @@ def extract_next_links(url, resp) -> list:
 
 # Content-Length header may be inaccurate but it's more efficient than counting words
 def low_value(resp) -> bool:
-    # --------------- low unique non-stop word count ---------------
-    words = re.findall(r"[A-Za-z']+", text)  # keeps words like "don't"
-    non_stop = [w for w in words if w.lower() not in STOPWORDS]
+    """
+    Returns True if this page looks low-value (thin, boilerplate, link farm, error page, etc.).
+    Uses cheap heuristics only (no ML).
+    """
+    # --- if text is missing, treat as low-value ---
+    text = (resp.text or "").strip()
+    if not text:
+        return True
 
-    # your original threshold:
-    if len(non_stop) < 200:
+    #parse HTML once so we can count links, get title, etc.
+    try:
+        soup = BeautifulSoup(resp.raw_response.content, "html.parser")
+    except Exception:
         return True
-    # --------------- low unique non-stop word ratio ---------------
-    unique_non_stop = set(w.lower() for w in non_stop)
-    if len(unique_non_stop) > 0 and (len(non_stop) / len(unique_non_stop)) > 10:
-        return True
-    #-------------- low text to html ratio detection ---------------
-    html_bytes = resp.raw_response.content or b""
-    html_len = len(html_bytes)
-    text_len = len(text)
 
-    #if html is huge but text is tiny it's probs nav/template/script heavy
-    #i searched it up
-    if html_len > 0 and (text_len / html_len) < 0.05:
-        return True
-    #-------------- error page detection ---------------
+    # ------------- low-value phrases check (catches error pages and other thin content) -------------
     lower_text = text.lower()
     low_value_phrases = (
         "page not found",
@@ -263,15 +258,42 @@ def low_value(resp) -> bool:
     )
     if any(p in lower_text for p in low_value_phrases):
         return True
-    #-------------- low word count detection (original) ---------------
-    words = resp.text.split()
-    count = 0
 
-    for word in words:
-        if word.lower() not in STOPWORDS:
-            count += 1
+    # ---------------- title check (catches pages that have no meaningful content and just a generic title like "index of" or "home") ----------------
+    title = ""
+    if soup.title and soup.title.string:
+        title = soup.title.string.strip()
+    if len(title) < 5:
+        return True
 
-    return count < 200 #can change number later
+    # ------------- stopwords count ---------------------
+    words = re.findall(r"[A-Za-z']+", text)  # keeps words like "don't"
+    non_stop = [w for w in words if w.lower() not in STOPWORDS]
+
+    #original threshold:
+    if len(non_stop) < 200:
+        return True
+
+    # ----------------- if the page has very little text, it's probably not worth crawling --------------
+    if len(text) < 1000:
+        return True
+
+    # -------------- text-to-html ratio check (catches pages that have lots of boilerplate and little real content) ---------------
+    html_bytes = resp.raw_response.content or b""
+    html_len = len(html_bytes)
+    text_len = len(text)
+
+    #if html is huge but text is tiny
+    if html_len > 0 and (text_len / html_len) < 0.05:
+        return True
+
+    # ---------------
+    unique_non_stop = set(w.lower() for w in non_stop)
+    if len(unique_non_stop) > 0 and (len(non_stop) / len(unique_non_stop)) > 10:
+        return True
+
+    #if it passed all filters, keep it
+    return False
 
 def too_large(resp):
     content_length = resp.headers.get('Content-Length')

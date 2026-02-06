@@ -226,7 +226,44 @@ def extract_next_links(url, resp) -> list:
     return list(linkstrings)
 
 # Content-Length header may be inaccurate but it's more efficient than counting words
-def low_value(resp):
+def low_value(resp) -> bool:
+    # --------------- low unique non-stop word count ---------------
+    words = re.findall(r"[A-Za-z']+", text)  # keeps words like "don't"
+    non_stop = [w for w in words if w.lower() not in STOPWORDS]
+
+    # your original threshold:
+    if len(non_stop) < 200:
+        return True
+    # --------------- low unique non-stop word ratio ---------------
+    unique_non_stop = set(w.lower() for w in non_stop)
+    if len(unique_non_stop) > 0 and (len(non_stop) / len(unique_non_stop)) > 10:
+        return True
+    #-------------- low text to html ratio detection ---------------
+    html_bytes = resp.raw_response.content or b""
+    html_len = len(html_bytes)
+    text_len = len(text)
+
+    #if html is huge but text is tiny it's probs nav/template/script heavy
+    #i searched it up
+    if html_len > 0 and (text_len / html_len) < 0.05:
+        return True
+    #-------------- error page detection ---------------
+    lower_text = text.lower()
+    low_value_phrases = (
+        "page not found",
+        "404",
+        "access denied",
+        "permission denied",
+        "forbidden",
+        "not authorized",
+        "enable javascript",
+        "javascript is required",
+        "error occurred",
+        "an error has occurred",
+    )
+    if any(p in lower_text for p in low_value_phrases):
+        return True
+    #-------------- low word count detection (original) ---------------
     words = resp.text.split()
     count = 0
 

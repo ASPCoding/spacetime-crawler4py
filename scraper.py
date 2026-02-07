@@ -6,6 +6,8 @@ from urllib.parse import urlparse, parse_qs, urldefrag, urljoin
 # Beautiful Soup: https://medium.com/@spaw.co/beautifulsoup-find-all-421385b341d4 
 
 #Report
+valid_chars = set(['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t',\
+                   'u','v','w','x','y','z','\''])
 stop_words = set(["a","about","above","after","again","against","all","am","an","and","any","are","aren't","as","at","be",\
 "because","been","before","being","below","between","both","but","by","can't","cannot","could","couldn't",\
 "did","didn't","do","does","doesn't","doing","don't","down","during","each","few","for","from","further",\
@@ -101,15 +103,25 @@ def backup_dictionaries() -> None:
     except FileNotFoundError:
         pass
 
+def truncated(word):
+    word.lower()
+    truncated_word = ""
+    for char in word:
+        if char in valid_chars:
+            truncated_word += char
+    return truncated_word
 
 def response_analysis(url, resp) -> bool:
     soup = BeautifulSoup(resp.raw_response.content, "html.parser")
 
     page = soup.get_text()
     words = page.split()
+
+    if len(words) > 800000:
+        return False
     
     page_dict = dict()
-    for word in words:
+    for truncated(word) in words:
         if word not in stop_words:
             if word not in page_dict:
                 page_dict[word] = 1
@@ -343,7 +355,7 @@ def calendar_trap (path, query):
     )
     calendar_params = (
         "date", "day", "month", "year", "week", "start", "end",
-        "view", "range", "ical", "outlook-ical"
+        "view", "range", "ical", "outlook-ical", "eventDisplay"
     )
     if any(w in path for w in calendar_words) or any(w + "=" in query for w in calendar_params):
         #if it looks like calendar navigation skip
@@ -378,12 +390,3 @@ def infinite_space_trap(parsed):
 def share_trap(query: str) -> bool:
     #wics website has share=facebook share=twitter that get duplicated
     return query.lower().startswith("share=")
-
-# How many unique pages did you find? 
-    
-# What is the longest page in terms of the number of words? (HTML markup doesn’t count as words)
-    
-# What are the 50 most common words in the entire set of pages crawled under these domains ?
-
-# How many subdomains did you find in the uci.edu domain? Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain. The content of this list should be lines containing subdomain, number, for example:
-# vision.ics.uci.edu, 10

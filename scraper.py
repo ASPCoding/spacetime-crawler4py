@@ -219,73 +219,70 @@ def extract_next_links(url, resp) -> list:
 
 # Content-Length header may be inaccurate but it's more efficient than counting words
 def low_value(resp) -> bool:
-    """
-    Returns True if this page looks low-value (thin, boilerplate, link farm, error page, etc.).
-    Uses cheap heuristics only (no ML).
-    """
-    # --- if text is missing, treat as low-value ---
-    text = (resp.text or "").strip()
-    if not text:
+    # Must have bytes content
+    if resp is None or resp.raw_response is None or resp.raw_response.content is None:
         return True
 
-    #parse HTML once so we can count links, get title, etc.
-    soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
-    length = len(soup.find('div').get_text())
+    html_bytes = resp.raw_response.content
 
-    # ------------- low-value phrases check (catches error pages and other thin content) -------------
-    lower_text = text.lower()
+    # Decode safely
+    try:
+        html_text = html_bytes.decode("utf-8", errors="ignore")
+    except Exception:
+        return True
+
+    html_text = html_text.strip()
+    if not html_text:
+        return True
+
+    soup = BeautifulSoup(html_bytes, "html.parser")
+
+    #use visible-ish text for word checks (better than raw HTML)
+    visible_text = soup.get_text(separator=" ", strip=True)
+    if not visible_text:
+        return True
+
+    lower_text = visible_text.lower()
+
+    #low-value/error phrases
     low_value_phrases = (
-        "page not found",
-        "404",
-        "access denied",
-        "permission denied",
-        "forbidden",
-        "not authorized",
-        "enable javascript",
-        "javascript is required",
-        "error occurred",
-        "an error has occurred",
+        "page not found", "404", "access denied", "permission denied", "forbidden",
+        "not authorized", "enable javascript", "javascript is required",
+        "error occurred", "an error has occurred",
     )
     if any(p in lower_text for p in low_value_phrases):
         return True
-
-    # ---------------- title check (catches pages that have no meaningful content and just a generic title like "index of" or "home") ----------------
-    title = ""
-    if soup.title and soup.title.string:
-        title = soup.title.string.strip()
-    if len(title) < 5:
+    
+    #stopword count
+    words = re.findall(r"[A-Za-z']+", visible_text)
+    non_stop = [w for w in words if w.lower() not in stop_words]
+    if len(non_stop) < 100:
         return True
 
-    # ------------- stopwords count ---------------------
-    words = re.findall(r"[A-Za-z']+", text)  # keeps words like "don't"
-    non_stop = [w for w in words if w.lower() not in STOPWORDS]
-
-    #original threshold:
-    if len(non_stop) < 200:
-        return True
-
-    # -------------- text-to-html ratio check (catches pages that have lots of boilerplate and little real content) ---------------
-    html_bytes = resp.raw_response.content or b""
+    #text-to-HTML ratio (basically how much is HTML stuff vs readiable text)
     html_len = len(html_bytes)
-    text_len = len(text)
-
-    #if html is huge but text is tiny
-    if html_len > 0 and (text_len / html_len) < 0.05:
+    text_len = len(visible_text)
+    if html_len > 0 and (text_len / html_len) < 0.02:
         return True
 
-    # ---------------
-    unique_non_stop = set(w.lower() for w in non_stop)
-    if len(unique_non_stop) > 0 and (len(non_stop) / len(unique_non_stop)) > 10:
-        return True
-
-    #if it passed all filters, keep it
     return False
 
 def too_large(resp):
-    content_length = resp.headers.get('Content-Length')
-    if content_length:
-        return int(content_length) > 5000000 #5mb but we can change the number if thats too big
-    else:
+    try:
+        if resp is None or resp.raw_response is None:
+            return False
+
+        headers = resp.raw_response.headers
+        if not headers:
+            return False
+
+        content_length = headers.get("Content-Length")
+        if content_length is None:
+            return False
+
+        return int(content_length) > 10_000_000  # 5 MB
+    except Exception:
+        # Never let size checks crash the crawler
         return False
 
 def follow_rules_of(url, file) -> bool:

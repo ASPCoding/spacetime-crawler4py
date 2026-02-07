@@ -1,0 +1,8 @@
+www.informatics.uci.edu 61
+www.ics.uci.edu 18
+industryshowcase.ics.uci.edu 8
+courselisting.ics.uci.edu 1
+create.ics.uci.edu 2
+mswe.ics.uci.edu 3
+code.ics.uci.edu 11
+mcs.ics.uci.edu 11

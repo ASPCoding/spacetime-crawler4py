@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+Allow: /research/labs-centers/
+Allow: /research/areas-of-expertise/
+Allow: /research/example-research-projects/
+Allow: /research/phd-research/
+Allow: /research/past-dissertations/
+Allow: /research/masters-research/
+Allow: /research/undergraduate-research/
+Allow: /research/gifts-grants/
+Disallow: /research/

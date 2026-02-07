@@ -237,10 +237,8 @@ def low_value(resp) -> bool:
         return True
 
     #parse HTML once so we can count links, get title, etc.
-    try:
-        soup = BeautifulSoup(resp.raw_response.content, "html.parser")
-    except Exception:
-        return True
+    soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+    length = len(soup.find('div').get_text())
 
     # ------------- low-value phrases check (catches error pages and other thin content) -------------
     lower_text = text.lower()
@@ -272,10 +270,6 @@ def low_value(resp) -> bool:
 
     #original threshold:
     if len(non_stop) < 200:
-        return True
-
-    # ----------------- if the page has very little text, it's probably not worth crawling --------------
-    if len(text) < 1000:
         return True
 
     # -------------- text-to-html ratio check (catches pages that have lots of boilerplate and little real content) ---------------

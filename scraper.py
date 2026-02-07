@@ -121,12 +121,13 @@ def response_analysis(url, resp) -> bool:
         return False
     
     page_dict = dict()
-    for truncated(word) in words:
-        if word not in stop_words:
-            if word not in page_dict:
-                page_dict[word] = 1
+    for word in words:
+        truncated_word = truncated(word)
+        if truncated_word not in stop_words:
+            if truncated_word not in page_dict:
+                page_dict[truncated_word] = 1
             else:
-                page_dict[word] += 1
+                page_dict[truncated_word] += 1
         
     important_words = 0
     for frequency in page_dict.values():

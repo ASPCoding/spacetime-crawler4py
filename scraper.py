@@ -5,180 +5,163 @@ from urllib.parse import urlparse, parse_qs, urldefrag, urljoin
 # RESOURCE:
 # Beautiful Soup: https://medium.com/@spaw.co/beautifulsoup-find-all-421385b341d4 
 
-STOPWORDS = {"a",
-             "about",
-             "above",
-             "after",
-             "again",
-             "against",
-             "all",
-             "am",
-             "an",
-             "and",
-             "any",
-             "are",
-             "aren't",
-             "as",
-             "at",
-             "be",
-             "because",
-             "been",
-             "before",
-             "being",
-             "below",
-             "between",
-             "both",
-             "but",
-             "by",
-             "can't",
-             "cannot",
-             "could",
-             "couldn't",
-             "did",
-             "didn't",
-             "do",
-             "does",
-             "doesn't",
-             "doing",
-             "don't",
-             "down",
-             "during",
-             "each",
-             "few",
-             "for",
-             "from",
-             "further",
-             "had",
-             "hadn't",
-             "has",
-             "hasn't",
-             "have",
-             "haven't",
-             "having",
-             "he",
-             "he'd",
-             "he'll",
-             "he's",
-             "her",
-             "here",
-             "here's",
-             "hers",
-             "herself",
-             "him",
-             "himself",
-             "his",
-             "how",
-             "how's",
-             "i",
-             "i'd",
-             "i'll",
-             "i'm",
-             "i've",
-             "if",
-             "in",
-             "into",
-             "is",
-             "isn't",
-             "it",
-             "it's",
-             "its",
-             "itself",
-             "let's",
-             "me",
-             "more",
-             "most",
-             "mustn't",
-             "my",
-             "myself",
-             "no",
-             "nor",
-             "not",
-             "of",
-             "off",
-             "on",
-             "once",
-             "only",
-             "or",
-             "other",
-             "ought",
-             "our",
-             "ours",
-             "ourselves",
-             "out",
-             "over",
-             "own",
-             "same",
-             "shan't",
-             "she",
-             "she'd",
-             "she'll",
-             "she's",
-             "should",
-             "shouldn't",
-             "so",
-             "some",
-             "such",
-             "than",
-             "that",
-             "that's",
-             "the",
-             "their",
-             "theirs",
-             "them",
-             "themselves",
-             "then",
-             "there",
-             "there's",
-             "these",
-             "they",
-             "they'd",
-             "they'll",
-             "they're",
-             "they've",
-             "this",
-             "those",
-             "through",
-             "to",
-             "too",
-             "under",
-             "until",
-             "up",
-             "very",
-             "was",
-             "wasn't",
-             "we",
-             "we'd",
-             "we'll",
-             "we're",
-             "we've",
-             "were",
-             "weren't",
-             "what",
-             "what's",
-             "when",
-             "when's",
-             "where",
-             "where's",
-             "which",
-             "while",
-             "who",
-             "who's",
-             "whom",
-             "why",
-             "why's",
-             "with",
-             "won't",
-             "would",
-             "wouldn't",
-             "you",
-             "you'd",
-             "you'll",
-             "you're",
-             "you've",
-             "your",
-             "yours",
-             "yourself",
-             "yourselves"}
+#Report
+valid_chars = set(['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t',\
+                   'u','v','w','x','y','z','\''])
+stop_words = set(["a","about","above","after","again","against","all","am","an","and","any","are","aren't","as","at","be",\
+"because","been","before","being","below","between","both","but","by","can't","cannot","could","couldn't",\
+"did","didn't","do","does","doesn't","doing","don't","down","during","each","few","for","from","further",\
+"had","hadn't","has","hasn't","have","haven't","having","he","he'd","he'll","he's","her","here","here's","hers",\
+"herself","him","himself","his","how","how's","i","i'd","i'll","i'm","i've","if","in","into","is",\
+"isn't","it","it's","its","itself","let's","me","more","most","mustn't","my","myself","no","nor",\
+"not","of","off","on","once","only","or","other","ought","our","ours","ourselves","out","over","own",\
+"same","shan't","she","she'd","she'll","she's","should","shouldn't","so","some","such","than","that",\
+"that's","the","their","theirs","them","themselves","then","there","there's","these","they","they'd",\
+"they'll","they're","they've","this","those","through","to","too","under","until","up","very","was",\
+"wasn't","we","we'd","we'll","we're","we've","were","weren't","what","what's","when","when's","where",\
+"where's","which","while","who","who's","whom","why","why's","with","won't","would","wouldn't",\
+"you","you'd","you'll","you're","you've","your","yours","yourself","yourselves"])
+# How many unique pages did you find? 
+page_count = 0
+# What is the longest page in terms of the number of words? (HTML markup doesn’t count as words)
+longest_page_url = ""
+longest_page_length = 0
+# What are the 50 most common words in the entire set of pages crawled under these domains ?
+word_frequencies = dict()
+# How many subdomains did you find in the uci.edu domain? 
+# Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain. 
+# The content of this list should be lines containing subdomain, number, for example:
+subdomain_pages = dict()
+
+def attempt_recovery():
+    global page_count
+    global longest_page_length
+    global longest_page_url
+    global word_frequencies
+    global subdomain_pages
+    try:
+        with open("./report.txt") as report:
+            line = report.readline().strip()
+            if line == "":
+                return
+            if line[0] != "P":
+                return
+            else:
+                page_count = int(line.split()[2])
+            line = report.readline()
+            line = report.readline().strip().split()
+            longest_page_length = int(line[3])
+            longest_page_url = line[2][:-1]
+        
+        with open("./word_frequencies.txt") as file:
+            for line in file:
+                pair = line.strip().split()
+                word_frequencies[pair[0]] = pair[1]
+            
+        with open("./subdomain_pages.txt") as file:
+            for line in file:
+                pair = line.strip().split()
+                subdomain_pages[pair[0]] = pair[1]
+    except FileNotFoundError:
+        pass
+
+def write_curr_report() -> None:
+    global page_count
+    global longest_page_length
+    global longest_page_url
+    global word_frequencies
+    global subdomain_pages
+    with open("./report.txt","w") as report:
+        report.write(f"Page Count: {page_count}\n")
+        report.write("\n")
+        report.write(f"Longest Page: {longest_page_url}, {longest_page_length}\n")
+        report.write("\n")
+        report.write("Top 50 Words: \n")
+        sortedFrequencies = sorted(word_frequencies.items(), key=lambda item:item[1], reverse=True)
+        i = 0
+        for key, value in sortedFrequencies:
+            report.write(f"Word: {key}, Frequency: {value}\n")
+            i += 1
+            if i == 50:
+                break
+        report.write("\n")
+        report.write("Subdomain Pages:\n")
+        for key, value in subdomain_pages.items():
+            report.write(f"Domain: {key}, Pages: {value}\n")
+
+def backup_dictionaries() -> None:
+    global word_frequencies
+    global subdomain_pages
+    try:
+        with open("./word_frequencies.txt","w") as file:
+            for key, value in word_frequencies.items():
+                file.write(f"{key} {value}\n")
+            
+        with open("./subdomain_pages.txt","w") as file:
+            for key, value in subdomain_pages.items():
+                file.write(f"{key} {value}\n")
+    except FileNotFoundError:
+        pass
+
+def truncated(word):
+    word.lower()
+    truncated_word = ""
+    for char in word:
+        if char in valid_chars:
+            truncated_word += char
+    return truncated_word
+
+def response_analysis(url, resp) -> bool:
+    soup = BeautifulSoup(resp.raw_response.content, "html.parser")
+
+    page = soup.get_text()
+    words = page.split()
+
+    if len(words) > 800000:
+        return False
+    
+    page_dict = dict()
+    for truncated(word) in words:
+        if word not in stop_words:
+            if word not in page_dict:
+                page_dict[word] = 1
+            else:
+                page_dict[word] += 1
+        
+    important_words = 0
+    for frequency in page_dict.values():
+        important_words += frequency
+
+    if important_words < 200:
+        return False
+    else:
+        global page_count
+        global longest_page_length
+        global longest_page_url
+        global word_frequencies
+        global subdomain_pages
+        page_count += 1
+        if len(words) > longest_page_length:
+            longest_page_length = len(words)
+            longest_page_url = url
+        for word in page_dict:
+            if word not in word_frequencies.keys():
+                word_frequencies[word] = 1
+            else:
+                word_frequencies[word] += page_dict[word]
+        try:
+            if urlparse(url).hostname not in subdomain_pages.keys():
+                subdomain_pages[urlparse(url).hostname] = 1
+            else:
+                subdomain_pages[urlparse(url).hostname] += 1
+        except TypeError:
+            print("TypeError for ", url)
+            raise
+
+    write_curr_report()
+    backup_dictionaries()
+
+    return True
 
 def scraper(url, resp):
     """
@@ -189,9 +172,15 @@ def scraper(url, resp):
     if not status_check(resp) or low_value(resp) or too_large(resp):
         return []
 
+    if page_count == 0:
+        attempt_recovery()
     #extract links using the provided helper, then filter with is_valid
-    links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+    high_info = response_analysis(url, resp)
+    if high_info:
+        links = extract_next_links(url, resp)
+        return [link for link in links if is_valid(link)]
+    else:
+        return []
 
 def extract_next_links(url, resp) -> list:
     # url: the URL that was used to get the page
@@ -442,7 +431,7 @@ def calendar_trap (path, query):
     )
     calendar_params = (
         "date", "day", "month", "year", "week", "start", "end",
-        "view", "range", "ical", "outlook-ical"
+        "view", "range", "ical", "outlook-ical", "eventDisplay"
     )
     if any(w in path for w in calendar_words) or any(w + "=" in query for w in calendar_params):
         #if it looks like calendar navigation skip
@@ -477,12 +466,3 @@ def infinite_space_trap(parsed):
 def share_trap(query: str) -> bool:
     #wics website has share=facebook share=twitter that get duplicated
     return query.lower().startswith("share=")
-
-# How many unique pages did you find? 
-    
-# What is the longest page in terms of the number of words? (HTML markup doesn’t count as words)
-    
-# What are the 50 most common words in the entire set of pages crawled under these domains ?
-
-# How many subdomains did you find in the uci.edu domain? Submit the list of subdomains ordered alphabetically and the number of unique pages detected in each subdomain. The content of this list should be lines containing subdomain, number, for example:
-# vision.ics.uci.edu, 10

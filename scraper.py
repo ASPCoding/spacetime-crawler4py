@@ -56,12 +56,12 @@ def attempt_recovery():
         with open("./word_frequencies.txt") as file:
             for line in file:
                 pair = line.strip().split()
-                word_frequencies[pair[0]] = pair[1]
+                word_frequencies[pair[0]] = int(pair[1])
             
         with open("./subdomain_pages.txt") as file:
             for line in file:
                 pair = line.strip().split()
-                subdomain_pages[pair[0]] = pair[1]
+                subdomain_pages[pair[0]] = int(pair[1])
     except FileNotFoundError:
         pass
 
@@ -104,9 +104,9 @@ def backup_dictionaries() -> None:
         pass
 
 def truncated(word):
-    word.lower()
+    lowercase_word = word.lower()
     truncated_word = ""
-    for char in word:
+    for char in lowercase_word:
         if char in valid_chars:
             truncated_word += char
     return truncated_word
@@ -123,6 +123,8 @@ def response_analysis(url, resp) -> bool:
     page_dict = dict()
     for word in words:
         truncated_word = truncated(word)
+        if truncated_word == "":
+            continue
         if truncated_word not in stop_words:
             if truncated_word not in page_dict:
                 page_dict[truncated_word] = 1

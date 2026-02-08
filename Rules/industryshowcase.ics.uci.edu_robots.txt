@@ -1,5 +1,0 @@
-User-agent: *
-Disallow: /wp-admin/
-Allow: /wp-admin/admin-ajax.php
-
-Sitemap: https://industryshowcase.ics.uci.edu/wp-sitemap.xml

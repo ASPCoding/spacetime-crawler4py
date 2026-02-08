@@ -268,33 +268,6 @@ def extract_next_links(url, resp) -> list:
 
     return list(linkstrings)
 
-#Determines if the url follows the rules of the domain's robot.txt based on an existent file
-def follow_rules_of(url, file) -> bool:
-    disallow = set()
-    allow = set()
-    for line in file:
-        if line == "User-agent: *\n":
-            while True:
-                new_line = file.readline()
-                if new_line == "\n" or new_line == "":
-                    break
-                if new_line[-1] == "\n":
-                    new_line = new_line[:-1]
-                if new_line[0] == "D":
-                    disallow.add(new_line[10:])
-                if new_line[0] == "A":
-                    allow.add(new_line[7:]) 
-            break
-    parsed = urlparse(url)
-    for disallowed in disallow:
-        if len(disallowed) <= len(parsed.path) and disallowed == parsed.path[:len(disallowed)]:
-            if parsed.path in allow:
-                return True
-            else:
-                return False
-    return True
-
-
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
@@ -312,13 +285,6 @@ def is_valid(url):
         allowed = (".ics.uci.edu", ".cs.uci.edu", ".informatics.uci.edu", ".stat.uci.edu")
         if not host.endswith(allowed):
             return False
-
-        try:
-            with open("./Rules/" + host + "_robots.txt") as file:
-                if not follow_rules_of(url, file):
-                    return False
-        except FileNotFoundError:
-            pass
 
         path = (parsed.path or "").lower()
         query = (parsed.query or "").lower()

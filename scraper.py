@@ -135,7 +135,7 @@ def response_analysis(url, resp) -> bool:
     for frequency in page_dict.values():
         important_words += frequency
 
-    if important_words < 200:
+    if important_words < 50:
         return False
     else:
         global page_count

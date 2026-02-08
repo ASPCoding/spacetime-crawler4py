@@ -33,6 +33,7 @@ word_frequencies = dict()
 # The content of this list should be lines containing subdomain, number, for example:
 subdomain_pages = dict()
 
+#Tries to initialize the global variables based on files in the directory if they exist
 def attempt_recovery():
     global page_count
     global longest_page_length
@@ -65,6 +66,7 @@ def attempt_recovery():
     except FileNotFoundError:
         pass
 
+#Writes and updates the report based on the global variables
 def write_curr_report() -> None:
     global page_count
     global longest_page_length
@@ -89,6 +91,7 @@ def write_curr_report() -> None:
         for key, value in subdomain_pages.items():
             report.write(f"Domain: {key}, Pages: {value}\n")
 
+#Backups the two global dictionaries into two separate files in case of an error or server crash
 def backup_dictionaries() -> None:
     global word_frequencies
     global subdomain_pages
@@ -103,6 +106,8 @@ def backup_dictionaries() -> None:
     except FileNotFoundError:
         pass
 
+#Truncates a word down to a lowercase and removes all numbers and special characters 
+#aside from apostrophies
 def truncated(word):
     lowercase_word = word.lower()
     truncated_word = ""
@@ -156,6 +161,7 @@ def low_value(resp) -> bool:
 
     return False
 
+#Check whether the response is of good value and updates the global variables if it is
 def response_analysis(url, resp) -> bool:
     soup = BeautifulSoup(resp.raw_response.content, "html.parser")
 
@@ -262,6 +268,7 @@ def extract_next_links(url, resp) -> list:
 
     return list(linkstrings)
 
+#Determines if the url follows the rules of the domain's robot.txt based on an existent file
 def follow_rules_of(url, file) -> bool:
     disallow = set()
     allow = set()

@@ -111,13 +111,58 @@ def truncated(word):
             truncated_word += char
     return truncated_word
 
+def low_value(resp) -> bool:
+    html_bytes = resp.raw_response.content
+
+    # Decode safely
+    try:
+        html_text = html_bytes.decode("utf-8", errors="ignore")
+    except Exception:
+        return True
+
+    html_text = html_text.strip()
+    if not html_text:
+        return True
+
+    soup = BeautifulSoup(html_bytes, "html.parser")
+
+    #use visible-ish text for word checks (better than raw HTML)
+    visible_text = soup.get_text(separator=" ", strip=True)
+    if not visible_text:
+        return True
+
+    lower_text = visible_text.lower()
+
+    #low-value/error phrases
+    low_value_phrases = (
+        "page not found", "404", "access denied", "permission denied", "forbidden",
+        "not authorized", "enable javascript", "javascript is required",
+        "error occurred", "an error has occurred",
+    )
+    if any(p in lower_text for p in low_value_phrases):
+        return True
+    
+    #stopword count
+    words = re.findall(r"[A-Za-z']+", visible_text)
+    non_stop = [w for w in words if w.lower() not in stop_words]
+    if len(non_stop) < 50:
+        return True
+
+    #text-to-HTML ratio (basically how much is HTML stuff vs readiable text)
+    html_len = len(html_bytes)
+    text_len = len(visible_text)
+    if html_len > 0 and (text_len / html_len) < 0.02:
+        return True
+
+    return False
+
 def response_analysis(url, resp) -> bool:
     soup = BeautifulSoup(resp.raw_response.content, "html.parser")
 
     page = soup.get_text()
     words = page.split()
 
-    if len(words) > 800000:
+    if len(words) > 1000000:
         return False
     
     page_dict = dict()
@@ -135,7 +180,7 @@ def response_analysis(url, resp) -> bool:
     for frequency in page_dict.values():
         important_words += frequency
 
-    if important_words < 50:
+    if low_value(resp):
         return False
     else:
         global page_count
